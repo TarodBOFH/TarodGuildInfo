@@ -9,7 +9,8 @@ TarodGuildInfo.maxOnline = 15
 function TarodGuildInfo:Initialize()
     TarodGuildInfo.currentPlayer = GetUnitName("player")
     d(zo_strformat("Welcome Back |cB27BFF<<1>>|r!", TarodGuildInfo.currentPlayer))
-    TarodGuildInfo:GuildInfo() 
+    TarodGuildInfo:GuildInfo()
+    TarodGuildInfo.alreadyLoggedIn = true
 end
 
 function TarodGuildInfo:GuildInfo() 
@@ -21,16 +22,32 @@ end
 
 function TarodGuildInfo:PrintGuildInfo(idx)
     local guildId = GetGuildId(idx)
-    local _, onlineMemberCount = GetGuildInfo(guildId)
     d(zo_strformat("|cFFFFFF<<1>>|r: |cFFB5F4<<2>>|r", GetGuildName(guildId), GetGuildMotD(guildId)))
-    d(zo_strformat(" |cC3F0C2<<1[You are the only one online :(/There is only another member online:/There are $d members online:]>>|r", onlineMemberCount-1))
+    local onlineMemberCount = TarodGuildInfo:CountOtherGuildMembers(guildId)
+    local additionalMembers = onlineMemberCount
+
+    d(zo_strformat(" |cC3F0C2<<1[You are the only one online :(/There is only another member online:/There are $d members online:]>>|r", additionalMembers))
     if (onlineMemberCount < TarodGuildInfo.maxOnline ) then 
         TarodGuildInfo:PrintGuildMembers(guildId)
     end
 end
 
+function TarodGuildInfo:CountOtherGuildMembers(guildId)
+    local guildMemberCount = GetNumGuildMembers(guildId)
+    local onlineCount = 0
+    for idx=1, guildMemberCount do
+        local _,_,_,_,logoff = GetGuildMemberInfo(guildId, idx)
+        local _, charName, _, _, _, _, _, _, _ = GetGuildMemberCharacterInfo(guildId, idx)
+        if logoff == 0 and zo_strformat("<<1>>", charName) ~= TarodGuildInfo.currentPlayer then
+            onlineCount = onlineCount + 1
+        end
+    end
+    return onlineCount
+end
+
 function TarodGuildInfo:PrintGuildMembers(guildId)
     local guildMemberCount = GetNumGuildMembers(guildId)
+    
     for idx=1, guildMemberCount do
         local pname,note,rank,status,logoff = GetGuildMemberInfo(guildId, idx)
         local hasChar, charName, zoneName, classType, alliance, level, cp, zoneId, consoleId = GetGuildMemberCharacterInfo(guildId, idx)
